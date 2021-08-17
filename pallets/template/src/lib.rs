@@ -8,7 +8,7 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec; // Step 3.1 will include this in `Cargo.toml`
-
+	cargo clean
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -43,6 +43,8 @@ pub mod pallet {
     
 	#[pallet::storage] 
 	pub(super) type Proofs<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, (Vec<u8>,T::AccountId), ValueQuery>; 
+	#[pallet::storage] 
+	pub(super) type Voters<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, (Vec<u8>,T::AccountId), ValueQuery>; 
 
     
     #[pallet::hooks]
@@ -78,26 +80,28 @@ pub mod pallet {
 		}
 
 		// #[pallet::weight(10_000)]
-		// fn Vote(
-		// 	origin: OriginFor<T>,
-		// 	coordinates: Vec<u8>,
-		// ) -> DispatchResultWithPostInfo {
-		// 	// Check that the extrinsic was signed and get the signer.
-		// 	// This function will return an error if the extrinsic is not signed.
-		// 	// https://substrate.dev/docs/en/knowledgebase/runtime/origin
-		// 	ensure_signed(origin)?;
+		#[pallet::weight(1_000)]
+		pub(super) fn Vote(
+			origin: OriginFor<T>,
+			VoterId: Vec<u8>,
+			Location:Vec<u8>,
+		) -> DispatchResultWithPostInfo {cargo clean
+			// Check that the extrinsic was signed and get the signer.
+			// This function will return an error if the extrinsic is not signed.
+			// https://substrate.dev/docs/en/knowledgebase/runtime/origin
+			let sender = ensure_signed(origin)?;
 
-		// 	// Verify that the land record exist in block .
-		// 	ensure!(Proofs::<T>::contains_key(&coordinates), Error::<T>::NoSuchLandRecord);
+			// Verify that the land record exist in block .
+			///ensure!(Voters::<T>::contains_key(&VoterId), Error::<T>::AlreadyVoted);
 
-		// 	// Get owner of the land.
-		// 	let (owner,_) = Proofs::<T>::get(&coordinates);
+			// Get owner of the land.
+			Voters::<T>::insert(&VoterId, (&Location,&sender));
 
-		// 	// Emit an event that the land record is verified.
-		// 	Self::deposit_event(Event::OwnerVerified(owner));
+			// Emit an event that the land record is verified.
+			Self::deposit_event(Event::VotedSuccessfully(VoterId));
 
-		// 	Ok(().into())
-		// }
+			Ok(().into())
+		}
 	}
 }
 
